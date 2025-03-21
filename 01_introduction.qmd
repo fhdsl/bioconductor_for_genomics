@@ -1,0 +1,82 @@
+---
+title: "Introduction: Experimental Design and S4 Objects"
+format: html
+---
+
+## Learning Objectives
+
+- **Explain** the basics of how RNAseq experiments are conducted
+- **Explain** the basics of experimental design, batch effects, and when to consult the sequencing core
+- **Distinguish** between *technical* and *biological* replicates and what kinds of results to expect from each
+- **Explain** the basic structure of Bioconductor S4 objects
+- **Explain** and **Utilize** SummarizedExperiment objects
+
+
+## General Purpose of RNAseq Experiments
+
+Bulk RNAseq experiments are meant to distinguish expression differences between samples or groups of samples. 
+
+## Experimental Design of RNAseq Experiments
+
+When we design our RNAseq experiment, we want to be able to:
+
+- Number and type of **replicates**
+- Avoiding **confounding**
+- Addressing **batch effects**
+
+The important thing to note is that if you're unsure about the experimental design, *contact the Bioinformatics Core*. They can help you design the experiment based on what samples you have.
+
+## Basics of the RNAseq Process
+
+## What is Bioconductor?
+
+## S4 Bioconductor Objects
+
+At the heart of Bioconductor are the S4 Classes. You can think of these data structures as ways to package together:
+
+- Assay Data, such as RNAseq count matrix
+- Metadata (data about the experiment), including Experimental Design
+
+Part of why Bioconductor works is this data packaging. We can write routines to act on the data in these S4 Objects as part of a processing *workflow*. As long as we output a Bioconductor S4 object, our routines can work as part of a pipeline.
+
+You can think of the Bioconductor S4 objects as taking the place of `data.frame`s in `dplyr` pipelines - they are the common format that all of the Bioconductor methods work on. They allow Bioconductor methods to be `interoperable`.
+
+### Validation
+
+The other big part of S4 objects is *validation*. This can be a bit hard to wrap your head around.
+
+The Bioconductor designers put special validation checks on the input data for the Bioconductor objects when you load data into them. The following is what is called the *Constructor* for the SummarizedExperiment object. 
+
+```r
+SummarizedExperiment(assays=SimpleList(),
+                     rowData=NULL, rowRanges=NULL,
+                     colData=DataFrame(),
+                     metadata=list(),
+                     checkDimnames=TRUE)
+```
+
+Each argument to the `SummarizedExperiment` constructor defines restrictions
+
+## `SummarizedExperiment`
+
+We'll take a look at data in a `SummarizedExperiment` object:
+
+
+
+## Assay Data
+
+Everything in `SummarizedExperiment` is built around the Assay data that we store in it.
+
+Basically, each element of the Assay data list contains a `data.frame` with the following contents:
+
+- Rows: correspond to Gene Locus or possibly Transcripts
+- Columns: correspond to the samples used in your experiment.
+- Values: correspond to the actual data. In the case of RNAseq, these are the *counts* that map to each row.
+
+Assay Data is very flexible. For example, there are flow cytometry objects where the rows correspond to cell surface markers, and columns that correspond to each cell. Similarly, `SingleCellExperiment` objects (which are derived from `SummarizedExperiment`) have rows that correspond to Genes and columns that correspond to individual cells. 
+
+## Metadata
+
+The most important part of the metadata is the `colData` slot. This slot contains information about the samples (the columns) of the assay. This is where we store the Experimental Design that we talked about. 
+
+## Subsetting `SummarizedExperiment`

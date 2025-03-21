@@ -1,3 +1,27 @@
+# Bioconductor for Genomics
+
+This course will introduce you to the basic data structures and genomic data analysis in Bioconductor. Specifically, we will focus on the basics of RNAseq analysis, including differential expression, annotation, and gene set analysis. We will also focus on loading data and metadata into data structures such as `SummarizedExperiment`. By the end of this course, you should be familiar with a basic RNAseq analysis workflow utilizing RNAseq count data. 
+
+Please note that this course requires the Intro to R course as a prerequisite, or the equivalent course. Please note that this course does not cover RNAseq workflows such as MultiQC and alignment. 
+
+## Learning Objectives
+
+- **Explain** and **Utilize** Bioconductor data structures such as `SummarizedExperiment` to integrate metadata and assay data in your analysis
+- **Explore** and clean a RNAseq dataset, including QC analysis
+- **Utilize** Differential Expression analysis on an RNAseq dataset using Bioconductor Packages
+- **Identify** and **Annotate** Gene Sets for downstream analysis
+- **Load** data from RNAseq experiments into Bioconductor
+
+## Course Outline
+
+- Week 1: Experimental Design / Bioconductor Data Structures / What you need to know about S4: https://carpentries-incubator.github.io/bioc-project/05-s4.html
+- Week 2: SummarizedExperiment / Assay Data / Metadata / Subsetting / QC
+- Week 3: DESeq / Differential Expression
+- Week 4: Gene sets and annotation
+- Week 5: Installing Bioconductor Packages / Loading Data into Bioconductor Data Structures
+- Week 6: Wrap up / Running Bioconductor at FH / Using fHR
+
+
 # RNA-seq analysis with Bioconductor
 
 [![Create a Slack Account with us](https://img.shields.io/badge/Create_Slack_Account-The_Carpentries-071159.svg)](https://swc-slack-invite.herokuapp.com/)
