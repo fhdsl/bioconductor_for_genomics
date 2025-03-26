@@ -1,5 +1,8 @@
 project:
   output-dir: docs
+  render:
+    - "*.qmd"
+    - "!episodes/"
 
 book:
   title: Intro to SQL
@@ -13,7 +16,8 @@ book:
 
   chapters:
     - index.qmd
-    - 01-introduction.qmd
+    - 00_concepts.qmd
+    - 01_introduction.qmd
 
   sidebar: 
     logo: "img/logo.png"
