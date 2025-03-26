@@ -9,12 +9,25 @@ format: html
 - **Explain** the basics of experimental design, batch effects, and when to consult the sequencing core
 - **Distinguish** between *technical* and *biological* replicates and what kinds of results to expect from each
 - **Explain** the basic structure of Bioconductor S4 objects
-- **Explain** and **Utilize** SummarizedExperiment objects
+- **Explain** and **Utilize** `SummarizedExperiment` objects
 
 
 ## General Purpose of RNAseq Experiments
 
 Bulk RNAseq experiments are meant to distinguish expression differences between samples or groups of samples. 
+
+[Please see the concepts section](00_concepts.html) for more in depth details of the processing of RNA-seq experiments.
+
+## What are we trying to accomplish?
+
+In RNAseq, we are interested in assessing *expression differences* between samples at either the gene or transcript level. 
+
+In order to do this, we need *phenotype information* about the samples in our experiment. Specifically, we need to have information about:
+
+- conditions (Tissue type)
+- possible confounders (gender, time)
+
+
 
 ## Experimental Design of RNAseq Experiments
 
@@ -26,15 +39,30 @@ When we design our RNAseq experiment, we want to be able to:
 
 The important thing to note is that if you're unsure about the experimental design, *contact the Bioinformatics Core*. They can help you design the experiment based on what samples you have.
 
-## Basics of the RNAseq Process
-
 ## What is Bioconductor?
+
+Data in bioinformatics is often complex.  To deal with this,
+developers define specialised data containers (termed classes) that
+match the properties of the data they need to handle.
+
+This aspect is central to the **Bioconductor**[^Bioconductor] project
+which uses the same **core data infrastructure** across packages. This
+certainly contributed to Bioconductor's success. Bioconductor package
+developers are advised to make use of existing infrastructure to
+provide coherence, interoperability, and stability to the project as a
+whole.
+
+[^Bioconductor]: The [Bioconductor](https://www.bioconductor.org) project was
+    initiated by Robert Gentleman, one of the two creators of the R
+    language. Bioconductor provides tools dedicated to omics data
+    analysis. Bioconductor uses the R statistical programming language
+    and is open source and open development.
 
 ## S4 Bioconductor Objects
 
-At the heart of Bioconductor are the S4 Classes. You can think of these data structures as ways to package together:
+At the heart of Bioconductor are the [S4 Classes](https://bioconductor.org/help/course-materials/2017/Zurich/S4-classes-and-methods.html). You can think of these data structures as ways to package together:
 
-- Assay Data, such as RNAseq count matrix
+- Assay Data, such as an RNAseq count matrix
 - Metadata (data about the experiment), including Experimental Design
 
 Part of why Bioconductor works is this data packaging. We can write routines to act on the data in these S4 Objects as part of a processing *workflow*. As long as we output a Bioconductor S4 object, our routines can work as part of a pipeline.
@@ -45,7 +73,7 @@ You can think of the Bioconductor S4 objects as taking the place of `data.frame`
 
 The other big part of S4 objects is *validation*. This can be a bit hard to wrap your head around.
 
-The Bioconductor designers put special validation checks on the input data for the Bioconductor objects when you load data into them. The following is what is called the *Constructor* for the SummarizedExperiment object. 
+The Bioconductor designers put special validation checks on the input data for the Bioconductor objects when you load data into them. The following is what is called the *Constructor* for the   `SummarizedExperiment` object. 
 
 ```r
 SummarizedExperiment(assays=SimpleList(),
@@ -55,28 +83,139 @@ SummarizedExperiment(assays=SimpleList(),
                      checkDimnames=TRUE)
 ```
 
-Each argument to the `SummarizedExperiment` constructor defines restrictions
+Each argument to the `SummarizedExperiment` constructor defines restrictions on that slot.
+
+The `checkDimnames` argument is critical. In order to do any work with an experiment you need to map samples to `colNames` (the experimental matrix). For example, to calculate differential expression between samples, you need to specify the different groups to compare and which samples map to which groups. Thus, the column names in the AssayData must be identical to the row names in `colData`.
 
 ## `SummarizedExperiment`
 
+![](images/SE.svg)
+
+
 We'll take a look at data in a `SummarizedExperiment` object:
 
+```{r}
+suppressPackageStartupMessages({
+library(SummarizedExperiment)
+})
+  
+GSE96870 <- readRDS("data/GSE96870_se.rds")
+GSE96870
+```
+```{r}
+colnames(GSE96870)
+
+```
 
 
 ## Assay Data
 
 Everything in `SummarizedExperiment` is built around the Assay data that we store in it.
 
-Basically, each element of the Assay data list contains a `data.frame` with the following contents:
+Each element of the Assay data list contains a `data.frame` with the following contents:
 
-- Rows: correspond to Gene Locus or possibly Transcripts
-- Columns: correspond to the samples used in your experiment.
-- Values: correspond to the actual data. In the case of RNAseq, these are the *counts* that map to each row.
+- **Rows**: correspond to Gene Locus or possibly Transcripts
+- **Columns**: correspond to the samples used in your experiment.
+- **Values**: correspond to the actual data. In the case of RNAseq, these are the *counts* that map to each row.
+
+```{r}
+assay_data <- assay(GSE96870)
+head(assay_data)
+```
+
+:::{.callout}
+## Assays Are Not just for RNAseq data
 
 Assay Data is very flexible. For example, there are flow cytometry objects where the rows correspond to cell surface markers, and columns that correspond to each cell. Similarly, `SingleCellExperiment` objects (which are derived from `SummarizedExperiment`) have rows that correspond to Genes and columns that correspond to individual cells. 
+:::
 
 ## Metadata
 
+Metadata is information about the experiment that is not part of the Assay Data.
+
 The most important part of the metadata is the `colData` slot. This slot contains information about the samples (the columns) of the assay. This is where we store the Experimental Design that we talked about. 
 
+```{r}
+colData(GSE96870)
+```
+
+In our experimental design, we have males and females, timepoints, and different kinds of tissues. 
+
+:::{.callout-note}
+## Keep your `SummarizedExperiment` whole
+
+It might be tempting to extract the assay data and the metadata and work with them separately. But as we'll see in the following section, these two slots work together.
+:::
+
 ## Subsetting `SummarizedExperiment`
+
+We saw that we have the `checkNames` constraint. This is because we can use the `colData` and the `assayData` in our object to do subsetting using the metadata.
+
+```{r}
+female <- GSE96870[,GSE96870$sex == "Female"]
+female
+colData(female)
+```
+
+This tight interaction of metadata and assay data is critical when we start doing differential analysis. The experimental design will help determine whether we can make the comparisons we want to make and the conclusions we can draw from the dataset.
+
+## `tidySummarizedExperiment`
+
+The `SummarizedExperiment` object does not act like the `data.frame`/`tibble` we expect, especially in filtering and subsetting.
+
+The `tidySummarizedExperiment` package will be helpful for us to understand and visualize the `SummarizedExperiment` package. Once we do that, our `SummarizedExperiment` object will act more like a `data.frame`. 
+
+Basically, the output looks like a long data frame that combines both the assay and metadata. This format is helpful in doing more 
+
+```{r}
+library(tidySummarizedExperiment)
+GSE96870
+```
+
+### Getting Counts across the experiment
+
+
+```{r}
+GSE96870 |>
+    group_by(.sample) |>
+    summarise(total_counts=sum(counts))
+```
+
+### Plotting 
+
+We can look at the distribution of counts across samples by using `.sample` as our grouping variable in `ggplot()`.
+
+```{r tidySE-plot}
+GSE96870 |>
+    ggplot(aes(counts + 1, group=.sample, color=infection)) +
+    geom_density() +
+    scale_x_log10() +
+    theme_bw()
+```
+
+The boxplots are helpful for detecting batch effects:
+
+```{r tidy-boxplot}
+GSE96870 |>
+    ggplot(aes(x=counts + 1, group=.sample, fill=infection)) +
+    geom_boxplot() +
+    scale_x_log10() +
+    theme_bw()
+```
+
+## Take Home Messages
+
+- We package multiple parts of the data (assay data and metadata) into a `SummarizedExperiment` object
+  - Columns correspond to samples, Row corresponds to gene locus or transcripts
+  - *Column names* of the assay data must match a column in the `colData`
+  - *Experimental Design* variables are part of the `colData`
+  - Rownames of the assay data must match the rowNames in the column data
+- The `SummarizedExperiment` object lets us subset by phenotype variables
+- `tidySummarizedExperiment` lets us interact with the `SummarizedExperiment` object as if it were a long data frame with both metadata and assay data together.
+  - We can plot and subset the `SummarizedExperiment` object using our regular `tidyverse` tools (`ggplot2`, `dplyr`, etc.) once we load the `tidySummarizedExperiment` package.  
+  
+## What about all of the other kinds of objects?
+
+Most of the other Bioconductor Data Structures derive from some variant of the `SummarizedExperiment`. They might add some functionality that is core to the package they belong to, such as `DEseq2`. This includes `seurat` objects for Single Cell sequencing.
+
+
